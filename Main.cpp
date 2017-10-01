@@ -150,6 +150,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	float MouseYPosition = 0.0f;
 	float MouseWheelRotationDelta = 0.0f;
 
+	// For Advanced Exercise 01:
+
+	/** 
+		This result has been set to S_OK in execution so far 
+		(when calling ResizeBuffers).
+	*/
+	HRESULT ResizeResult = 0;
+
 	switch (message)
 	{
 	case WM_PAINT:
@@ -188,23 +196,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		MouseWheelRotationDelta = GET_WHEEL_DELTA_WPARAM(wParam);
 		
 		// Modify the blue component accordingly: 
-		g_clear_colour[2] += MouseWheelRotationDelta / 1000.0f;
-
-		// Keep it within the bounds:
-		if (g_clear_colour[2] >= 1.0f)
-		{
-			g_clear_colour[2] = 1.0f;
-		}
-		else if (g_clear_colour[2] <= 0.0f)
-		{
-			g_clear_colour[2] = 0.0f;
-		}
+		g_clear_colour[2] += MouseWheelRotationDelta / 1000.0f;		
 		break;
 
 	// For Tutorial 02 Advanced 01:
 	// CHECK TO SEE IF THIS IS THE OPTIMAL WAY TO GO ABOUT RESIZING THE BUFFERS!!OGea
 	case WM_SIZE:
-
 		if (g_pSwapChain)
 		{
 			// Clear the state of the device context first (so that ResizeBuffers() can succeed):
@@ -216,12 +213,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			UINT NewWidth = ClientBounds.right - ClientBounds.left;
 			UINT NewHeight = ClientBounds.bottom - ClientBounds.top;
 
-			/** Then it is possible to resize the buffers correctly
-			(Unsure if one can use null for the last parameter and I'm also using the 
-			default format value of DXGI_FORMAT_R8G8B8A8_UNORM for the NewFormat parameter,
-			as I am unsure of how to detect the optimal format)
+			/** 
+				Then it is possible to resize the buffers correctly
+				(Using DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH for the
+				last parameter to allowing switching between full-screen
+				and windowed mode. I'm also using DXGI_FORMAT_UNKNOWN, to
+				preserve the existing format. Finally, I have set the first 3
+				parameters as 0, to preserve the exitsting number of buffers,
+				as well as having DXGI use the width and height of the client
+				area of the target window, for then new width and height.)
+
+				SOURCE: https://msdn.microsoft.com/en-us/library/bb174577(v=vs.85).aspx 
 			*/
-			g_pSwapChain->ResizeBuffers(1, NewWidth, NewHeight, DXGI_FORMAT_R8G8B8A8_UNORM, DefaultSwapChainDescription.Flags);
+			HRESULT ResizeResult = g_pSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN,
+				DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
 		}		
 		break;
 
@@ -235,6 +240,20 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}		
 	}
 
+	// Keep the colour components of g_clear_colour
+	// within the bounds (0.0f to 1.0f):	
+	for (int ClearColourIterator = 0; ClearColourIterator < G_CLEAR_COLOUR_ARRAY_SIZE - 1; ClearColourIterator++)
+	{
+		if (g_clear_colour[ClearColourIterator] >= 1.0f)
+		{
+			g_clear_colour[ClearColourIterator] = 1.0f;
+		}
+		else if (g_clear_colour[ClearColourIterator] <= 0.0f)
+		{
+			g_clear_colour[ClearColourIterator] = 0.0f;
+		}
+	}
+	
 	return 0;
 }
 
